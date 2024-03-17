@@ -24,19 +24,14 @@ The objective of this project is to setup an concise, effective and modular fram
 │   ├── sac
 │   └── td3
 ├── environments
-│   ├── atari
-│   └── mujoco
+│   ├── Atari
+│   └── MuJoCo
 ├── experiments
-├── docs
+├── notes
 ├── runs
+├── tests
 ├── utils
-│   ├── ddpg
-│   ├── dqn
-│   ├── evals
-│   ├── rainbow
-│   ├── sac
-│   ├── td3
-│   └── utils
+│   └── evals
 ├── videos
 └── wandb
 ```
