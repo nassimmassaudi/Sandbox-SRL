@@ -3,6 +3,7 @@ import os
 import random
 import time
 from dataclasses import dataclass
+import miniworld
 
 os.environ[
     "XLA_PYTHON_CLIENT_MEM_FRACTION"
@@ -17,6 +18,7 @@ import numpy as np
 import optax
 import tyro
 from flax.training.train_state import TrainState
+from flax.training import checkpoints
 from stable_baselines3.common.atari_wrappers import (
     ClipRewardEnv,
     EpisodicLifeEnv,
@@ -33,7 +35,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 @dataclass
 class Args:
-    exp_name: str = os.path.basename(__file__)[: -len(".py")]
+    exp_name: str = os.path.basename(__file__)[: -len(".py")] # to be changed in future implementation
     """the name of this experiment"""
     seed: int = 1
     """seed of the experiment"""
@@ -43,13 +45,17 @@ class Args:
     """the wandb's project name"""
     wandb_entity: str = "rl0708"
     """the entity (team) of wandb's project"""
-    capture_video: bool = False
+    capture_video: bool = True
     """whether to capture videos of the agent performances (check out `videos` folder)"""
     save_model: bool = False
     """whether to save model into the `runs/{run_name}` folder"""
+    checkpoint_frequency: int = 50
+    """the frequency for each checkpoint of the model's parameters"""
+    starting_update: int = 1
+    """starting to save model's parameters"""
 
     # Algorithm specific arguments
-    env_id: str = "BeamRider-v4"
+    env_id: str = "Breakout-ramNoFrameskip-v4"
     """the id of the environment"""
     total_timesteps: int = 10000000
     """total timesteps of the experiments"""
@@ -66,7 +72,7 @@ class Args:
     target_network_frequency: int = 1000
     """the timesteps it takes to update the target network"""
     batch_size: int = 32
-    """the batch size of sample from the reply memory"""
+    """the batch size of sample from the replay memory"""
     start_e: float = 1
     """the starting epsilon for exploration"""
     end_e: float = 0.01
@@ -249,7 +255,7 @@ poetry run pip install "stable_baselines3==2.0.0a1" "gymnasium[atari,accept-rom-
                     writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
                     writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
-        # TRY NOT TO MODIFY: save data to reply buffer; handle `final_observation`
+        # TRY NOT TO MODIFY: save data to replay buffer; handle `final_observation`
         real_next_obs = next_obs.copy()
         for idx, trunc in enumerate(truncations):
             if trunc:
@@ -284,6 +290,14 @@ poetry run pip install "stable_baselines3==2.0.0a1" "gymnasium[atari,accept-rom-
                 q_state = q_state.replace(
                     target_params=optax.incremental_update(q_state.params, q_state.target_params, args.tau)
                 )
+            
+            if args.track:
+                # make sure to tune `CHECKPOINT_FREQUENCY` 
+                # so models are not saved too frequently
+                if update % (args.checkpoint_frequency * args.batch_size) == 0:
+                    checkpoints.save_checkpoint(f"{wandb.run.dir}/agent.pt", target=q_state, step=global_step)
+                    # torch.save(agent.state_dict(), f"{wandb.run.dir}/agent.pt")
+                    wandb.save(f"{wandb.run.dir}/agent.pt", policy="now")
 
     if args.save_model:
         model_path = f"runs/{run_name}/{args.exp_name}.cleanrl_model"

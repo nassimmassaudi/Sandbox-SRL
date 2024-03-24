@@ -1,11 +1,15 @@
-# import gym
-# # import ale_py
+import gymnasium as gym
+import ale_py
+import miniworld
 
-# # print('gym:', gym.__version__)
-# # # print('ale_py:', ale_py.__version__)
+print('gym:', gym.__version__)
+print('ale_py:', ale_py.__version__)
 
-# # env = gym.make('Breakout-v0')
+print(gym.envs.registry.keys())
 
+# env = gym.make("MiniWorld-OneRoom-v0")
+# env = gym.make('Breakout-ramNoFrameskip-v4')
+# env = gym.make('CartPole-v1')
 
 # import sys
 # import os
@@ -16,5 +20,9 @@
 # print("script_dir :", script_dir)
 # print("parent_dir :", parent_dir)
 
-import jax
-print("Devices:", jax.devices())
+# import jax
+# print("Devices:", jax.devices())
+
+
+# import shimmy
+# print(shimmy.__version__)

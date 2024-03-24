@@ -29,4 +29,5 @@ Metric for Deep Reinforcement Learning]()
 [Atari - Gym](https://gymnasium.farama.org)      
 [MineDoJo](https://arxiv.org/abs/2206.08853)          
 [DeepMind Lab](https://arxiv.org/abs/1612.03801)
+[Minigrid & Miniworld - Gym](https://arxiv.org/abs/2306.13831)
 

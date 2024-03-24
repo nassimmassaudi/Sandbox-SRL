@@ -6,6 +6,6 @@
 
 ### Classic Control
 
-## DeepMind Control 
+## DeepMind Control
 
-### MuJoco
+### MuJoCo

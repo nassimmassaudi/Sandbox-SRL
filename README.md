@@ -2,10 +2,9 @@
 
 The objective of this project is to setup an concise, effective and modular framework with a premise focus on State Representation Learning (SRL). The project will consist of the implementation of a set of agents with a Vanilla baseline and some modular part (such as the loss, the embeddings, the number of Q Networks and so on ...). The choice of the different packages and tools used for this project have been listed in  [Tools](notes/Tools.md).
 
-
-
 ## Table of Contents
-- [List of Implemented Environments](notes/Environments.md) 
+
+- [List of Implemented Environments](notes/Environments.md)
 - [Instructions for the Workspace's Setup](notes/Setup_Workspace.md)
 - [List of Papers](notes/Papers.md)[^1]
 - [Selected Tools](notes/Tools.md)
@@ -15,7 +14,7 @@ The objective of this project is to setup an concise, effective and modular fram
 
 ## Structure of the Framework
 
-```
+```bash
 .
 ├── agents
 │   ├── ddpg
@@ -35,7 +34,3 @@ The objective of this project is to setup an concise, effective and modular fram
 ├── videos
 └── wandb
 ```
-
-
-
-
