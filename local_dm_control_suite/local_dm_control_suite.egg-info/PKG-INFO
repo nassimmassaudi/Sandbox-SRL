@@ -1,0 +1,4 @@
+Metadata-Version: 2.1
+Name: local-dm-control-suite
+Version: 0.1.0
+Summary: A collection of MuJoCo-based Reinforcement Learning environments
