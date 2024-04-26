@@ -38,9 +38,7 @@ def set_seed_everywhere(seed):
         torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
-
     
-
 
 def module_hash(module):
     result = 0

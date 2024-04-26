@@ -9,11 +9,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import utils
-from utils.architecture.sac_ae import  Actor, Critic, weight_init, LOG_FREQ
-from utils.architecture.transition_model import make_transition_model
-from utils.architecture.decoder import make_decoder
-
+from utils.architecture.DBC.sac_ae import  Actor, Critic, weight_init, LOG_FREQ
+from utils.architecture.DBC.transition_model import make_transition_model
+from utils.architecture.DBC.decoder import make_decoder
+import utils.utils_dbc as utils
 
 class BaselineAgent(object):
     """Baseline algorithm with transition model and various decoder types."""
