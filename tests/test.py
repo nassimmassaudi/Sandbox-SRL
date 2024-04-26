@@ -1,11 +1,11 @@
-import gymnasium as gym
-import ale_py
-import miniworld
+# import gymnasium as gym
+# import ale_py
+# import miniworld
 
-print('gym:', gym.__version__)
-print('ale_py:', ale_py.__version__)
+# print('gym:', gym.__version__)
+# print('ale_py:', ale_py.__version__)
 
-print(gym.envs.registry.keys())
+# print(gym.envs.registry.keys())
 
 # env = gym.make("MiniWorld-OneRoom-v0")
 # env = gym.make('Breakout-ramNoFrameskip-v4')
@@ -26,3 +26,13 @@ print(gym.envs.registry.keys())
 
 # import shimmy
 # print(shimmy.__version__)
+
+
+from hydra._internal.utils import _locate
+
+# Try locating the class to see if it raises an error
+try:
+  cls = _locate("agents.drq_agent.DRQAgent")
+  print("Class found:", cls)
+except Exception as e:
+  print("Error locating class:", e)
