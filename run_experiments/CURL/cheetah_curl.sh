@@ -1,8 +1,8 @@
 # xvfb-run -s "-screen 0 1400x900x24" python
 
 xvfb-run -s "-screen 0 1400x900x24" python train_curl.py \
-    --domain_name cartpole \
-    --task_name swingup \
+    --domain_name cheetah \
+    --task_name run \
     --encoder_type pixel \
     --action_repeat 8 \
     --save_tb --pre_transform_image_size 100 --image_size 84 \

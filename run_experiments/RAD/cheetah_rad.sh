@@ -1,6 +1,6 @@
 xvfb-run -s "-screen 0 1400x900x24" python train_rad.py \
-    --domain_name cartpole \
-    --task_name swingup \
+    --domain_name cheetah \
+    --task_name run \
     --encoder_type pixel --work_dir log \
     --action_repeat 8 --num_eval_episodes 10 \
     --pre_transform_image_size 100 --image_size 84 \
