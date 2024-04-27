@@ -9,7 +9,7 @@ import sys
 import random
 import time
 import json
-import dmc2gym
+import utils.dmc2gym as dmc2gym
 import copy
 
 
