@@ -256,5 +256,5 @@ dependencies:
       - widgetsnbextension==4.0.10
       - yapf==0.40.2
       - yarl==1.9.4
-      - zipp==3.18.1
+      - zipp==3.1
 prefix: /home/zeus/miniconda3/envs/cloudspace

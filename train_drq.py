@@ -34,8 +34,8 @@ def make_env(cfg):
     else:
         domain_name = cfg.env.split('_')[0]
         task_name = '_'.join(cfg.env.split('_')[1:])
+        
 
-    # per dreamer: https://github.com/danijar/dreamer/blob/02f0210f5991c7710826ca7881f19c64a012290c/wrappers.py#L26
     camera_id = 2 if domain_name == 'quadruped' else 0
 
     env = dmc2gym.make(domain_name=domain_name,
@@ -84,7 +84,6 @@ class Workspace(object):
             float(self.env.action_space.high.max())
         ]
         self.agent = hydra.utils.instantiate(cfg.agent)
-        print("self.agent", self.agent)
 
         self.replay_buffer = ReplayBuffer(self.env.observation_space.shape,
                                           self.env.action_space.shape,

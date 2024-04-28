@@ -24,8 +24,8 @@ from torchvision import transforms
 def parse_args():
     parser = argparse.ArgumentParser()
     # environment
-    parser.add_argument('--domain_name', default='cartpole')
-    parser.add_argument('--task_name', default='swingup')
+    parser.add_argument('--domain_name', default='cheetah')
+    parser.add_argument('--task_name', default='run')
     parser.add_argument('--pre_transform_image_size', default=100, type=int)
 
     parser.add_argument('--image_size', default=84, type=int)
@@ -68,17 +68,22 @@ def parse_args():
     parser.add_argument('--alpha_beta', default=0.5, type=float)
     # misc
     parser.add_argument('--seed', default=1, type=int)
-    parser.add_argument('--work_dir', default='log/RAD', type=str)
-    parser.add_argument('--save_tb', default=False, action='store_true')
-    parser.add_argument('--save_buffer', default=False, action='store_true')
-    parser.add_argument('--save_video', default=False, action='store_true')
-    parser.add_argument('--save_model', default=False, action='store_true')
-    parser.add_argument('--detach_encoder', default=False, action='store_true')
+    parser.add_argument('--work_dir', default='log', type=str)
+    parser.add_argument('--save_tb', default=True, action='store_true')
+    parser.add_argument('--save_buffer', default=True, action='store_true')
+    parser.add_argument('--save_video', default=True, action='store_true')
+    parser.add_argument('--save_model', default=True, action='store_true')
+    parser.add_argument('--detach_encoder', default=True, action='store_true')
     # data augs
     parser.add_argument('--data_augs', default='crop', type=str)
 
 
     parser.add_argument('--log_interval', default=100, type=int)
+    
+    parser.add_argument('--resource_files', type=str)
+    parser.add_argument('--img_source', default=None, type=str, choices=['color', 'noise', 'images', 'video', 'none'])
+    parser.add_argument('--total_frames', default=1000, type=int)
+    
     args = parser.parse_args()
     return args
 
@@ -194,6 +199,8 @@ def main():
     env = dmc2gym.make(
         domain_name=args.domain_name,
         task_name=args.task_name,
+        resource_files=args.resource_files,
+        img_source=args.img_source,
         seed=args.seed,
         visualize_reward=False,
         from_pixels=(args.encoder_type == 'pixel'),
@@ -201,7 +208,6 @@ def main():
         width=pre_transform_image_size,
         frame_skip=args.action_repeat
     )
- 
     env.seed(args.seed)
 
     # stack several consecutive frames together
