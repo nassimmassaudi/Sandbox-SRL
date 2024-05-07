@@ -1,0 +1,1 @@
+xvfb-run -s "-screen 0 1400x900x24" python train_drq.py env=cartpole_swingup batch_size=512 action_repeat=8

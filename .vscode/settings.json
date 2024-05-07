@@ -1,4 +1,8 @@
-// {
+{
+    "python.analysis.extraPaths": [
+        "./rlpyt"
+    ]
+} // {
 //     "python.analysis.extraPaths": [
 //         "./utils",
 //         "./utils/architecture"

@@ -1,0 +1,1 @@
+rclone copy /log remote:path 

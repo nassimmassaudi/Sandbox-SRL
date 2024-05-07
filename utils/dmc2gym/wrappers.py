@@ -44,9 +44,8 @@ class DMCWrapper(core.Env):
         self,
         domain_name,
         task_name,
-        resource_files,
-        img_source,
-        total_frames,
+        resource_files=None,
+        img_source=None,
         task_kwargs=None,
         visualize_reward={},
         from_pixels=False,
@@ -54,7 +53,9 @@ class DMCWrapper(core.Env):
         width=84,
         camera_id=0,
         frame_skip=1,
-        environment_kwargs=None
+        environment_kwargs=None,
+        total_frames=1000,
+        channels_first=True
     ):
         assert 'random' in task_kwargs, 'please specify a seed, for deterministic behaviour'
         self._from_pixels = from_pixels

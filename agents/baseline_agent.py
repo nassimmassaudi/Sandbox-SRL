@@ -9,11 +9,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import utils
-from utils.architecture.sac_ae import  Actor, Critic, weight_init, LOG_FREQ
-from utils.architecture.transition_model import make_transition_model
-from utils.architecture.decoder import make_decoder
-
+from utils.architecture.DBC.sac_ae import  Actor, Critic, weight_init, LOG_FREQ
+from utils.architecture.DBC.transition_model import make_transition_model
+from utils.architecture.DBC.decoder import make_decoder
+import utils.utils_dbc as utils
 
 class BaselineAgent(object):
     """Baseline algorithm with transition model and various decoder types."""
@@ -267,6 +266,8 @@ class BaselineAgent(object):
         if target_obs.dim() == 4:
             # preprocess images to be in [-0.5, 0.5] range
             target_obs = utils.preprocess_obs(target_obs)
+        # print("rec_obs (self.decoder(next_h))", rec_obs.shape)
+        # print("target_obs", target_obs.shape)
         rec_obs = self.decoder(next_h)
         loss = F.mse_loss(target_obs, rec_obs)
 
@@ -280,7 +281,7 @@ class BaselineAgent(object):
 
         self.decoder.log(L, step, log_freq=LOG_FREQ)
 
-    def update_contrastive(self, obs, action, next_obs, L, step):
+    def update_contrastive(self, obs, action, next_obs, L, step): 
         latent = self.critic.encoder(obs)
         next_latent = self.critic.encoder(next_obs)
         loss = self.contrastive_loss(latent, action, next_latent)

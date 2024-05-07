@@ -1,0 +1,15 @@
+xvfb-run -s "-screen 0 1400x900x24" python train_curl.py \
+    --domain_name cheetah \
+    --agent curl_sac \
+    --task_name run \
+    --action_repeat 4 \
+    --img_source video \
+    --resource_files ~/Sandbox-SRL/environments/video/crowd-1.mp4 \
+    --encoder_type pixel \
+    --save_tb \
+    --save_video \
+    --save_wandb \
+    --work_dir log/CURL \
+    --frame_stack 3 \
+    --seed 1 \
+    --num_train_steps 100000 \

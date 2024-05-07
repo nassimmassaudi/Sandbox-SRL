@@ -1,0 +1,1 @@
+sudo find /root/Sandbox-SRL/run_experiments -type f -name "*.sh" -exec chmod +x {} \;

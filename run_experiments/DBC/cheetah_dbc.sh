@@ -1,0 +1,15 @@
+xvfb-run -s "-screen 0 1400x900x24" python train_dbc.py \
+    --domain_name cheetah \
+    --agent bisim \
+    --task_name run \
+    --img_source video \
+    --resource_files ~/Sandbox-SRL/environments/video/crowd-1.mp4 \
+    --encoder_type pixel \
+    --decoder_type reward \
+    --action_repeat 4 \
+    --save_video \
+    --save_tb \
+    --save_wandb \
+    --work_dir log/DBC \
+    --seed 1 \
+    --num_train_steps 100000 \

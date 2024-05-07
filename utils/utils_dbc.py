@@ -8,6 +8,7 @@ import random
 
 from gymnasium.utils.step_api_compatibility import convert_to_terminated_truncated_step_api
 
+import wandb
 
 class eval_mode(object):
     def __init__(self, *models):
@@ -38,9 +39,7 @@ def set_seed_everywhere(seed):
         torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
-
     
-
 
 def module_hash(module):
     result = 0
@@ -51,7 +50,7 @@ def module_hash(module):
 
 def make_dir(dir_path):
     try:
-        os.mkdir(dir_path)
+        os.makedirs(dir_path)
     except OSError:
         pass
     return dir_path
@@ -106,17 +105,23 @@ class ReplayBuffer(object):
         idxs = np.random.randint(
             0, self.capacity if self.full else self.idx, size=self.batch_size
         )
+        obses = self.obses[idxs]
+        next_obses = self.next_obses[idxs]
+        actions = self.actions[idxs]
+        rewards = self.rewards[idxs]
+        curr_rewards = self.curr_rewards[idxs]
+        not_dones = self.not_dones[idxs]
+        obses = torch.as_tensor(obses, device=self.device).float()
+        actions = torch.as_tensor(actions, device=self.device)
+        curr_rewards = torch.as_tensor(curr_rewards, device=self.device)
+        rewards = torch.as_tensor(rewards, device=self.device)
+        next_obses = torch.as_tensor(next_obses, device=self.device).float()
+        not_dones = torch.as_tensor(not_dones, device=self.device)
 
-        obses = torch.as_tensor(self.obses[idxs], device=self.device).float()
-        actions = torch.as_tensor(self.actions[idxs], device=self.device)
-        curr_rewards = torch.as_tensor(self.curr_rewards[idxs], device=self.device)
-        rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
-        next_obses = torch.as_tensor(
-            self.next_obses[idxs], device=self.device
-        ).float()
-        not_dones = torch.as_tensor(self.not_dones[idxs], device=self.device)
         if k:
-            return obses, actions, rewards, next_obses, not_dones, torch.as_tensor(self.k_obses[idxs], device=self.device)
+            k_obses = self.k_obses[idxs]
+            k_obses = torch.as_tensor(k_obses, device=self.device)
+            return obses, actions, rewards, next_obses, not_dones, k_obses
         return obses, actions, curr_rewards, rewards, next_obses, not_dones
 
     def save(self, save_dir):
@@ -174,7 +179,7 @@ class FrameStack(gym.Wrapper):
     def step(self, action):
         obs, reward, done, trunc, info = self.env.step(action)
         self._frames.append(obs)
-        return self._get_obs(), reward, done, trunc, info
+        return self._get_obs(), reward, done, info
 
     def _get_obs(self):
         assert len(self._frames) == self._k
@@ -186,7 +191,7 @@ class FrameStack(gym.Wrapper):
 
 from torch.utils.tensorboard import SummaryWriter
 from collections import defaultdict
-import json
+import json 
 import os
 import shutil
 import torch
@@ -278,21 +283,30 @@ class MetersGroup(object):
 
 
 class Logger(object):
-    def __init__(self, log_dir, use_tb=True, config='rl'):
-        self._log_dir = log_dir
-        if use_tb:
-            tb_dir = os.path.join(log_dir, 'tb')
+    def __init__(self, args, exp_name, config='rl'):
+        self.exp_name = exp_name
+        self._log_dir = args.work_dir
+        self.save_wandb = args.save_wandb
+        # Initialize wandb if required
+        if self.save_wandb:
+            if not wandb.login(key="f302eb74e388e8173b2c053ef81436e9f6d87606", verify=True):
+                raise ConnectionRefusedError("Impossible to connect to wandb.")
+            wandb.init(project=args.project_name, sync_tensorboard=True, tags=[args.domain_name, args.agent, args.img_source, args.encoder_type, args.decoder_type], name=self.exp_name)
+            
+        if args.save_tb:
+            tb_dir = os.path.join(self._log_dir, 'tb')
             if os.path.exists(tb_dir):
                 shutil.rmtree(tb_dir)
             self._sw = SummaryWriter(tb_dir)
         else:
             self._sw = None
+        
         self._train_mg = MetersGroup(
-            os.path.join(log_dir, 'train.log'),
+            os.path.join(self._log_dir, 'train.log'),
             formating=FORMAT_CONFIG[config]['train']
         )
         self._eval_mg = MetersGroup(
-            os.path.join(log_dir, 'eval.log'),
+            os.path.join(self._log_dir, 'eval.log'),
             formating=FORMAT_CONFIG[config]['eval']
         )
 
@@ -401,4 +415,6 @@ class VideoRecorder(object):
     def save(self, file_name):
         if self.enabled:
             path = os.path.join(self.dir_name, file_name)
-            imageio.mimsave(path, self.frames, fps=self.fps)
+            imageio.mimsave(path, self.frames, fps=self.fps, format='GIF')
+
+

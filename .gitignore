@@ -2,3 +2,9 @@ wandb/*
 srl
 videos
 runs/*
+log/*
+*.pyc
+__pycache__/*
+HC ROMS
+ROMS
+token.conf
