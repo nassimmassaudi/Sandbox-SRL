@@ -5,7 +5,7 @@ xvfb-run -s "-screen 0 1400x900x24" python train_dbc.py \
     --img_source "video" \
     --resource_files "~/Sandbox-SRL/environments/video/crowd-1.mp4" \
     --encoder_type pixel \
-    --decoder_type contrastive \
+    --decoder_type pixel \
     --action_repeat 4 \
     --save_video \
     --save_tb \
