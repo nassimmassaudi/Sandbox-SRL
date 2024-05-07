@@ -16,7 +16,7 @@ class PixelDecoder(nn.Module):
         self.num_filters = num_filters
         self.init_height = 4
         self.init_width = 25
-        num_out_channels = 3  # rgb
+        num_out_channels = obs_shape[1]  # rgb
         kernel = 3
 
         self.fc = nn.Linear(
@@ -40,10 +40,13 @@ class PixelDecoder(nn.Module):
         self.outputs = dict()
 
     def forward(self, h):
-        h = torch.relu(self.fc(h))
+        h = torch.relu(self.fc(h)) # 3200 output
+        
         self.outputs['fc'] = h
 
         deconv = h.view(-1, self.num_filters, self.init_height, self.init_width)
+        print("deconv1", deconv.shape)
+        
         self.outputs['deconv1'] = deconv
 
         for i in range(0, self.num_layers - 1):

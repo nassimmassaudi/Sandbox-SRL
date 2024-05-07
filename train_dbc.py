@@ -23,14 +23,12 @@ from rich.traceback import install
 import warnings
 
 
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
     # environment
     parser.add_argument('--domain_name', default='cheetah')
     parser.add_argument('--task_name', default='run')
-    parser.add_argument('--image_size', default=84, type=int)
+    parser.add_argument('--image_size', default=84, type=int) # 84
     parser.add_argument('--action_repeat', default=1, type=int)
     parser.add_argument('--frame_stack', default=3, type=int)
     parser.add_argument('--resource_files', type=str)
@@ -49,8 +47,9 @@ def parse_args():
     parser.add_argument('--bisim_coef', default=0.5, type=float, help='coefficient for bisim terms')
     parser.add_argument('--load_encoder', default=None, type=str)
     # eval
-    parser.add_argument('--eval_freq', default=10, type=int)  # TODO: master had 10000
+    parser.add_argument('--eval_freq', default=1000, type=int)  # TODO: master had 10000
     parser.add_argument('--num_eval_episodes', default=20, type=int)
+    parser.add_argument('--eval_sample_stochastically', default=False, action='store_true')
     # critic
     parser.add_argument('--critic_lr', default=1e-3, type=float)
     parser.add_argument('--critic_beta', default=0.9, type=float)
@@ -80,20 +79,24 @@ def parse_args():
     parser.add_argument('--alpha_lr', default=1e-3, type=float)
     parser.add_argument('--alpha_beta', default=0.9, type=float)
     # misc
+    parser.add_argument('--project_name', default='SRL-AGI-Project', type=str)
+    parser.add_argument('--entity', default='rl0708', type=str)
     parser.add_argument('--seed', default=1, type=int)
-    parser.add_argument('--work_dir', default='.', type=str)
-    parser.add_argument('--save_tb', default=True, action='store_true')
-    parser.add_argument('--save_model', default=True, action='store_true')
-    parser.add_argument('--save_buffer', default=True, action='store_true')
-    parser.add_argument('--save_video', default=True, action='store_true')
+    parser.add_argument('--work_dir', default='log/DBC', type=str)
+    parser.add_argument('--save_tb', default=False, action='store_true')
+    parser.add_argument('--save_model', default=False, action='store_true')
+    parser.add_argument('--save_buffer', default=False, action='store_true')
+    parser.add_argument('--save_video', default=False, action='store_true')
+    parser.add_argument('--save_wandb', default=False, action='store_true')
     parser.add_argument('--transition_model_type', default='', type=str, choices=['', 'deterministic', 'probabilistic', 'ensemble'])
     parser.add_argument('--render', default=False, action='store_true')
     parser.add_argument('--port', default=2000, type=int)
+    
     args = parser.parse_args()
     return args
 
 
-def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_dir=None, do_carla_metrics=None):
+def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_dir=None, do_carla_metrics=None, eval_sample_determistic=False):
     # carla metrics:
     reason_each_episode_ended = []
     distance_driven_each_episode = []
@@ -106,6 +109,11 @@ def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_di
     obses = []
     values = []
     embeddings = []
+    
+    all_ep_rewards = []
+    
+    start_time = time.time()
+    prefix = 'stochastic_' if not eval_sample_determistic else ''
 
     for i in range(num_episodes):
         # carla metrics:
@@ -118,15 +126,22 @@ def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_di
         episode_reward = 0
         while not done:
             with utils.eval_mode(agent):
-                action = agent.select_action(obs)
+                if eval_sample_determistic:
+                    action = agent.select_action(obs)
+                else:
+                    action = agent.sample_action(obs)
 
             if embed_viz_dir:
                 obses.append(obs)
                 with torch.no_grad():
-                    values.append(min(agent.critic(torch.Tensor(obs).to(device).unsqueeze(0), torch.Tensor(action).to(device).unsqueeze(0))).item())
-                    embeddings.append(agent.critic.encoder(torch.Tensor(obs).unsqueeze(0).to(device)).cpu().detach().numpy())
+                    t_obs = torch.Tensor(obs).to(device).unsqueeze(0)
+                    t_act = torch.Tensor(action).to(device).unsqueeze(0)
+                    
+                    values.append(min(agent.critic(t_obs, t_act).item()))
+                    
+                    embeddings.append(agent.critic.encoder(t_obs).cpu().detach().numpy())
 
-            obs, reward, done, trunc, info = env.step(action)
+            obs, reward, done, info = env.step(action)
 
             # metrics:
             if do_carla_metrics:
@@ -146,10 +161,17 @@ def evaluate(env, agent, video, num_episodes, L, step, device=None, embed_viz_di
 
         video.save('%d.mp4' % step)
         L.log('eval/episode_reward', episode_reward, step)
+        all_ep_rewards.append(episode_reward)
 
     if embed_viz_dir:
         dataset = {'obs': obses, 'values': values, 'embeddings': embeddings}
         torch.save(dataset, os.path.join(embed_viz_dir, 'train_dataset_{}.pt'.format(step)))
+    
+    L.log('eval/' + prefix + 'eval_time', time.time()-start_time , step)
+    mean_ep_reward = np.mean(all_ep_rewards)
+    best_ep_reward = np.max(all_ep_rewards)
+    L.log('eval/' + prefix + 'mean_episode_reward', mean_ep_reward, step)
+    L.log('eval/' + prefix + 'best_episode_reward', best_ep_reward, step)
 
     L.dump(step)
 
@@ -329,6 +351,15 @@ def main():
         env = utils.FrameStack(env, k=args.frame_stack)
         eval_env = utils.FrameStack(eval_env, k=args.frame_stack)
 
+    # make directory
+    ts = time.gmtime() 
+    ts = time.strftime("%m-%d-%h-%M", ts)
+    env_name = args.agent + '-' + args.decoder_type + '-' + args.domain_name + '-' + args.task_name
+    exp_name = env_name + '-' + ts + '-im' + str(args.image_size) +'-b'  \
+    + str(args.batch_size) + '-s' + str(args.seed)  + '-' + args.encoder_type
+    args.work_dir = os.path.join(args.work_dir, exp_name)
+    print(args.work_dir)
+    
     utils.make_dir(args.work_dir)
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
     model_dir = utils.make_dir(os.path.join(args.work_dir, 'model'))
@@ -360,12 +391,12 @@ def main():
         device=device
     )
 
-    L = Logger(args.work_dir, use_tb=args.save_tb)
+    L = Logger(args, exp_name)
 
     episode, episode_reward, done, trunc = 0, 0, True, True
     start_time = time.time()
     for step in range(args.num_train_steps):
-        if done or trunc:
+        if done :
             if args.decoder_type == 'inverse':
                 for i in range(1, args.k):  # fill k_obs with 0s if episode is done
                     replay_buffer.k_obses[replay_buffer.idx - i] = 0
@@ -402,58 +433,59 @@ def main():
             with utils.eval_mode(agent):
                 action = agent.sample_action(obs)
 
-        # run training update
-        if step >= args.init_steps:
+        # run training update ( If greater than init step then we train)
+        if step >= args.init_steps: 
             num_updates = args.init_steps if step == args.init_steps else 1
             for _ in range(num_updates):
                 agent.update(replay_buffer, L, step)
 
         curr_reward = reward
-        next_obs, reward, done, trunc, _ = env.step(action)
+        next_obs, reward, done, _ = env.step(action)
 
-        # allow infinit bootstrap
+        # allow infinite bootstrap
         done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(
-            done or trunc
+            done
         )
         episode_reward += reward
 
         replay_buffer.add(obs, action, curr_reward, reward, next_obs, done_bool)
+        
         np.copyto(replay_buffer.k_obses[replay_buffer.idx - args.k], next_obs)
 
         obs = next_obs
         episode_step += 1
 
 
-def collect_data(env, agent, num_rollouts, path_length, checkpoint_path):
-    rollouts = []
-    for i in range(num_rollouts):
-        obses = []
-        acs = []
-        rews = []
-        observation = env.reset()
-        for j in range(path_length):
-            action = agent.sample_action(observation)
-            next_observation, reward, done, trunc, _ = env.step(action)
-            obses.append(observation)
-            acs.append(action)
-            rews.append(reward)
-            observation = next_observation
-        obses.append(next_observation)
-        rollouts.append((obses, acs, rews))
+# def collect_data(env, agent, num_rollouts, path_length, checkpoint_path):
+#     rollouts = []
+#     for i in range(num_rollouts):
+#         obses = []
+#         acs = []
+#         rews = []
+#         observation = env.reset()
+#         for j in range(path_length):
+#             action = agent.sample_action(observation)
+#             next_observation, reward, done,  _ = env.step(action)
+#             obses.append(observation)
+#             acs.append(action)
+#             rews.append(reward)
+#             observation = next_observation
+#         obses.append(next_observation)
+#         rollouts.append((obses, acs, rews))
 
-    from scipy.io import savemat
+#     from scipy.io import savemat
 
-    savemat(
-        os.path.join(checkpoint_path, "dynamics-data.mat"),
-        {
-            "trajs": np.array([path[0] for path in rollouts]),
-            "acs": np.array([path[1] for path in rollouts]),
-            "rews": np.array([path[2] for path in rollouts])
-        }
-    )
+#     savemat(
+#         os.path.join(checkpoint_path, "dynamics-data.mat"),
+#         {
+#             "trajs": np.array([path[0] for path in rollouts]),
+#             "acs": np.array([path[1] for path in rollouts]),
+#             "rews": np.array([path[2] for path in rollouts])
+#         }
+#     )
 
 
 if __name__ == '__main__':
     warnings.filterwarnings("ignore") # Just put this for this current version of the code
-    install(show_locals=True)
+    install(show_locals=False)
     main()

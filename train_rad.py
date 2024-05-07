@@ -13,7 +13,8 @@ import utils.dmc2gym as dmc2gym
 import copy
 
 
-from utils.utils_rad import Logger
+# from utils.utils_rad import Logger
+from utils.utils_dbc import Logger
 from utils.utils_rad import VideoRecorder
 import utils.utils_rad as utils
 
@@ -31,16 +32,20 @@ def parse_args():
     parser.add_argument('--image_size', default=84, type=int)
     parser.add_argument('--action_repeat', default=1, type=int)
     parser.add_argument('--frame_stack', default=3, type=int)
+    parser.add_argument('--resource_files', type=str)
+    parser.add_argument('--img_source', default=None, type=str, choices=['color', 'noise', 'images', 'video', 'none'])
+    parser.add_argument('--total_frames', default=1000, type=int)
+    
     # replay buffer
     parser.add_argument('--replay_buffer_capacity', default=100000, type=int)
     # train
     parser.add_argument('--agent', default='rad_sac', type=str)
     parser.add_argument('--init_steps', default=1000, type=int)
     parser.add_argument('--num_train_steps', default=1000000, type=int)
-    parser.add_argument('--batch_size', default=32, type=int)
+    parser.add_argument('--batch_size', default=128, type=int)
     parser.add_argument('--hidden_dim', default=1024, type=int)
     # eval
-    parser.add_argument('--eval_freq', default=1000, type=int)
+    parser.add_argument('--eval_freq', default=10000, type=int)
     parser.add_argument('--num_eval_episodes', default=10, type=int)
     # critic
     parser.add_argument('--critic_lr', default=1e-3, type=float)
@@ -58,6 +63,7 @@ def parse_args():
     parser.add_argument('--encoder_feature_dim', default=50, type=int)
     parser.add_argument('--encoder_lr', default=1e-3, type=float)
     parser.add_argument('--encoder_tau', default=0.05, type=float)
+    
     parser.add_argument('--num_layers', default=4, type=int)
     parser.add_argument('--num_filters', default=32, type=int)
     parser.add_argument('--latent_dim', default=128, type=int)
@@ -67,13 +73,17 @@ def parse_args():
     parser.add_argument('--alpha_lr', default=1e-4, type=float)
     parser.add_argument('--alpha_beta', default=0.5, type=float)
     # misc
+    parser.add_argument('--project_name', default='SRL-AGI-Project', type=str)
+    parser.add_argument('--entity', default='rl0708', type=str)
     parser.add_argument('--seed', default=1, type=int)
-    parser.add_argument('--work_dir', default='log', type=str)
-    parser.add_argument('--save_tb', default=True, action='store_true')
-    parser.add_argument('--save_buffer', default=True, action='store_true')
-    parser.add_argument('--save_video', default=True, action='store_true')
-    parser.add_argument('--save_model', default=True, action='store_true')
-    parser.add_argument('--detach_encoder', default=True, action='store_true')
+    parser.add_argument('--work_dir', default='log/RAD', type=str)
+    parser.add_argument('--save_tb', default=False, action='store_true')
+    parser.add_argument('--save_buffer', default=False, action='store_true')
+    parser.add_argument('--save_video', default=False, action='store_true')
+    parser.add_argument('--save_model', default=False, action='store_true')
+    parser.add_argument('--save_wandb', default=False, action='store_true')
+    
+    parser.add_argument('--detach_encoder', default=False, action='store_true')
     # data augs
     parser.add_argument('--data_augs', default='crop', type=str)
 
@@ -216,11 +226,11 @@ def main():
     
     # make directory
     ts = time.gmtime() 
-    ts = time.strftime("%m-%d", ts)    
-    env_name = args.domain_name + '-' + args.task_name
+    ts = time.strftime("%m-%d-%h-%M", ts)   
+    env_name = args.agent + '-' + args.domain_name + '-' + args.task_name
     exp_name = env_name + '-' + ts + '-im' + str(args.image_size) +'-b'  \
     + str(args.batch_size) + '-s' + str(args.seed)  + '-' + args.encoder_type
-    args.work_dir = args.work_dir + '/'  + exp_name
+    args.work_dir = os.path.join(args.work_dir, exp_name)
 
     utils.make_dir(args.work_dir)
     video_dir = utils.make_dir(os.path.join(args.work_dir, 'video'))
@@ -261,7 +271,7 @@ def main():
     )
 
 
-    L = Logger(args.work_dir, use_tb=args.save_tb)
+    L = Logger(args, exp_name)
 
     episode, episode_reward, done = 0, 0, True
     start_time = time.time()

@@ -1,0 +1,65 @@
+# General settings
+domain_name: 'cheetah'
+task_name: 'run'
+seed: 1
+work_dir: 'log'
+log_interval: 100
+
+# Image and frame settings
+pre_transform_image_size: 100
+image_size: 84
+action_repeat: 1
+frame_stack: 3
+total_frames: 1000
+img_source: null
+
+# Replay buffer settings
+replay_buffer_capacity: 100000
+
+# Training settings
+agent: 'rad_sac'
+init_steps: 1000
+num_train_steps: 1000000
+batch_size: 32
+eval_freq: 1000
+num_eval_episodes: 10
+data_augs: 'crop'
+
+# Network settings
+hidden_dim: 1024
+encoder_type: 'pixel'
+encoder_feature_dim: 50
+encoder_lr: 0.001
+encoder_tau: 0.05
+num_layers: 4
+num_filters: 32
+latent_dim: 128
+
+# Critic network settings
+critic_lr: 0.001
+critic_beta: 0.9
+critic_tau: 0.01
+critic_target_update_freq: 2
+
+# Actor network settings
+actor_lr: 0.001
+actor_beta: 0.9
+actor_log_std_min: -10
+actor_log_std_max: 2
+actor_update_freq: 2
+
+# Soft Actor-Critic settings
+discount: 0.99
+init_temperature: 0.1
+alpha_lr: 0.0001
+alpha_beta: 0.5
+
+# Persistence settings
+save_tb: true
+save_buffer: true
+save_video: true
+save_model: true
+detach_encoder: true
+
+# Resource settings
+resource_files: null

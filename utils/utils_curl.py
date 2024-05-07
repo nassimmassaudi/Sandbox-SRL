@@ -73,6 +73,7 @@ class ReplayBuffer(Dataset):
         self.capacity = capacity
         self.batch_size = batch_size
         self.device = device
+        
         self.image_size = image_size
         self.transform = transform
         # the proprioceptive obs is stored as float32, pixels obs as uint8
@@ -110,7 +111,6 @@ class ReplayBuffer(Dataset):
         
         obses = self.obses[idxs]
         next_obses = self.next_obses[idxs]
-
         obses = torch.as_tensor(obses, device=self.device).float()
         actions = torch.as_tensor(self.actions[idxs], device=self.device)
         rewards = torch.as_tensor(self.rewards[idxs], device=self.device)
@@ -467,4 +467,4 @@ class VideoRecorder(object):
     def save(self, file_name):
         if self.enabled:
             path = os.path.join(self.dir_name, file_name)
-            imageio.mimsave(path, self.frames, fps=self.fps)
+            imageio.mimsave(path, self.frames )

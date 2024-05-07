@@ -1,0 +1,75 @@
+# Environment and game settings
+game: 'ms_pacman'
+seed: 0
+grayscale: 1
+framestack: 4
+imagesize: 84
+
+# Training parameters
+n_steps: 100000
+batch_size: 32
+dqn_hidden_size: 256
+target_update_interval: 1
+target_update_tau: 1.0
+momentum_tau: 0.01
+batch_b: 1
+batch_t: 1
+jumps: 5
+num_logs: 10
+n_step: 10
+
+# Reinforcement learning specific settings
+replay_ratio: 64
+dynamics_blocks: 0
+residual_tm: 0.0
+spr: 1
+distributional: 1
+delta_clip: 1.0
+prioritized_replay: 1
+momentum_encoder: 1
+shared_encoder: 0
+local_spr: 0
+global_spr: 1
+noisy_nets: 1
+noisy_nets_std: 0.5
+
+# Augmentation and normalization
+augmentation:
+  styles: ["shift", "intensity"]
+  target_augmentation: 1
+  eval_augmentation: 0
+aug_prob: 1.0
+dropout: 0.0
+norm_type: 'bn'
+
+# Neural network classifier settings
+classifier: 'q_l1'
+final_classifier: 'linear'
+q_l1_type:
+  styles: ["value", "advantage"]
+
+# Weighting and scaling in training
+reward_loss_weight: 0.0
+model_rl_weight: 0.0
+model_spr_weight: 5.0
+t0_spr_loss_weight: 0.0
+
+# Exploration settings
+eps_steps: 2001
+min_steps_learn: 2000
+eps_init: 1.0
+eps_final: 0.0
+final_eval_only: 1
+
+# Technical settings
+cuda_idx: 0
+max_grad_norm: 10.0
+time_offset: 0
+
+# Weights & Biases (wandb) settings
+project: "Sandbox-SRL"
+entity: "rl0708"
+tag: ''
+wandb_dir: 'log'
+public: true
+beluga: true

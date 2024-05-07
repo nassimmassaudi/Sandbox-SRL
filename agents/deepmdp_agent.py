@@ -253,6 +253,8 @@ class DeepMDPAgent(object):
             loss = F.mse_loss(target_obs, rec_obs)
         else:
             rec_obs = self.decoder(h)
+            print("obs", obs.shape)
+            print("rec_obs", rec_obs.shape)
             loss = F.mse_loss(obs, rec_obs)
 
         self.encoder_optimizer.zero_grad()
