@@ -266,8 +266,8 @@ class BaselineAgent(object):
         if target_obs.dim() == 4:
             # preprocess images to be in [-0.5, 0.5] range
             target_obs = utils.preprocess_obs(target_obs)
-        print("rec_obs (self.decoder(next_h))", rec_obs.shape)
-        print("target_obs", target_obs.shape)
+        # print("rec_obs (self.decoder(next_h))", rec_obs.shape)
+        # print("target_obs", target_obs.shape)
         rec_obs = self.decoder(next_h)
         loss = F.mse_loss(target_obs, rec_obs)
 

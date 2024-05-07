@@ -14,28 +14,36 @@ class PixelDecoder(nn.Module):
 
         self.num_layers = num_layers
         self.num_filters = num_filters
-        self.init_height = 4
-        self.init_width = 25
-        num_out_channels = obs_shape[1]  # rgb
+        self.init_height = 11
+        self.init_width = 11
+        num_out_channels = obs_shape[0]  # rgb
         kernel = 3
 
         self.fc = nn.Linear(
             feature_dim, num_filters * self.init_height * self.init_width
         )
 
-        self.deconvs = nn.ModuleList()
+        # self.deconvs = nn.ModuleList()
 
         pads = [0, 1, 0]
-        for i in range(self.num_layers - 1):
-            output_padding = pads[i]
-            self.deconvs.append(
-                nn.ConvTranspose2d(num_filters, num_filters, kernel, stride=2, output_padding=output_padding)
-            )
-        self.deconvs.append(
-            nn.ConvTranspose2d(
-                num_filters, num_out_channels, kernel, stride=2, output_padding=1
-            )
-        )
+        
+        self.deconvs = nn.ModuleList([
+            nn.ConvTranspose2d(num_filters, num_filters, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(num_filters, num_filters, 3, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(num_filters, num_filters, 3, stride=2, padding=1, output_padding=0),
+            nn.Conv2d(num_filters, num_out_channels, 4, stride=1, padding=0)  # Adjusting from 87 to 84
+        ])
+        
+        # for i in range(self.num_layers - 1):
+        #     output_padding = pads[i]
+        #     self.deconvs.append(
+        #         nn.ConvTranspose2d(num_filters, num_filters, kernel, stride=2, output_padding=output_padding)
+        #     )
+        # self.deconvs.append(
+        #     nn.ConvTranspose2d(
+        #         num_filters, num_out_channels, kernel, stride=2, output_padding=1
+        #     )
+        # )
 
         self.outputs = dict()
 
@@ -45,7 +53,6 @@ class PixelDecoder(nn.Module):
         self.outputs['fc'] = h
 
         deconv = h.view(-1, self.num_filters, self.init_height, self.init_width)
-        print("deconv1", deconv.shape)
         
         self.outputs['deconv1'] = deconv
 
